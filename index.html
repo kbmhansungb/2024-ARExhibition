@@ -1,42 +1,118 @@
 <!DOCTYPE html>
-<html lang="en-us"> 
+<html lang="en-us">
   <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>Unity WebGL Player | WebGL Test AR</title>
-    <script src="Build/UnityLoader.js"></script>
-    <script src="js/three.min.js"></script>
-    <link rel="stylesheet" href="css/index.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>ARWT</title>
+    <link rel="shortcut icon" href="TemplateData/favicon.ico">
+    <link rel="stylesheet" href="TemplateData/style.css">
   </head>
-
-  <body>
-    <div id="images">
-			<img id="earth" src="images\earth.jpg" />			<img id="moon" src="images\moon.jpg" />			<img id="MexicanSkull" src="images\MexicanSkull.jpg" />
+  <body class="dark">
+    <div id="unity-container" class="unity-desktop">
+      <canvas id="unity-canvas"></canvas>
     </div>
-    <div id="unityContainer"></div>    
-
+    <div id="loading-cover" style="display:none;">
+      <div id="unity-loading-bar">
+        <div id="unity-logo"><img src="logo.png"></div>
+        <div id="unity-progress-bar-empty" style="display: none;">
+          <div id="unity-progress-bar-full"></div>
+        </div>
+        <div class="spinner"></div>
+      </div>
+    </div>
+    <div id="unity-fullscreen-button" style="display: none;"></div>
     <script>
-      // 카메라 접근 권한 요청
+      const hideFullScreenButton = "";
+      const buildUrl = "Build";
+      const loaderUrl = buildUrl + "/2024 ARExhibition.loader.js";
+      const config = {
+        dataUrl: buildUrl + "/2024 ARExhibition.data",
+        frameworkUrl: buildUrl + "/2024 ARExhibition.framework.js",
+        codeUrl: buildUrl + "/2024 ARExhibition.wasm",
+        streamingAssetsUrl: "StreamingAssets",
+        companyName: "DefaultCompany",
+        productName: "ARWT",
+        productVersion: "0.1",
+      };
+
+      const container = document.querySelector("#unity-container");
+      const canvas = document.querySelector("#unity-canvas");
+      const loadingCover = document.querySelector("#loading-cover");
+      const progressBarEmpty = document.querySelector("#unity-progress-bar-empty");
+      const progressBarFull = document.querySelector("#unity-progress-bar-full");
+      const fullscreenButton = document.querySelector("#unity-fullscreen-button");
+      const spinner = document.querySelector('.spinner');
+
+      const canFullscreen = (function() {
+        for (const key of [
+            'exitFullscreen',
+            'webkitExitFullscreen',
+            'webkitCancelFullScreen',
+            'mozCancelFullScreen',
+            'msExitFullscreen',
+          ]) {
+          if (key in document) {
+            return true;
+          }
+        }
+        return false;
+      }());
+
+      if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+        container.className = "unity-mobile";
+        config.devicePixelRatio = 1;
+      }
+      loadingCover.style.display = "";
+
+      // 카메라 접근 권한 요청 함수
       function requestCameraPermission() {
-        navigator.mediaDevices.getUserMedia({ video: true })
+        return navigator.mediaDevices.getUserMedia({ video: true })
           .then(function(stream) {
-            // 카메라 접근이 허용되었을 때의 처리
             console.log('Camera access granted');
-            // 스트림을 비디오 요소나 캔버스 등에 사용할 수 있습니다.
+            return stream;
           })
           .catch(function(err) {
-            // 카메라 접근이 거부되었을 때의 처리
             console.error('Camera access denied: ', err);
+            throw new Error('Camera access denied');
           });
       }
 
-      // 페이지가 로드되면 카메라 권한 요청 실행
+      function startUnity() {
+        const script = document.createElement("script");
+        script.src = loaderUrl;
+        script.onload = () => {
+          createUnityInstance(canvas, config, (progress) => {
+            spinner.style.display = "none";
+            progressBarEmpty.style.display = "";
+            progressBarFull.style.width = `${100 * progress}%`;
+          }).then((unityInstance) => {
+            loadingCover.style.display = "none";
+            if (canFullscreen) {
+              if (!hideFullScreenButton) {
+                fullscreenButton.style.display = "";
+              }
+              fullscreenButton.onclick = () => {
+                unityInstance.SetFullscreen(1);
+              };
+            }
+          }).catch((message) => {
+            alert(message);
+          });
+        };
+        document.body.appendChild(script);
+      }
+
       window.onload = function() {
-        requestCameraPermission();
+        // 카메라 권한 요청 후 Unity 시작
+        requestCameraPermission()
+          .then(() => {
+            startUnity();
+          })
+          .catch((error) => {
+            alert("Could not start Unity without camera access.");
+          });
       };
     </script>
-
-    <script src="js/app.js"></script>
   </body>
 </html>
