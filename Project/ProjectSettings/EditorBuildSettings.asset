@@ -11,7 +11,7 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/Demos/Marker/AR Marker Rotate and Scale/ARMarker Rotate and Scale.unity
     guid: 065497cde0b9c46d99aaf798c5d58e69
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes-Develpment/WebXR.unity
     guid: 36432bfdb3009472289632c1c710650e
   - enabled: 0
@@ -26,4 +26,7 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/Demos/Markerless/AR Markerless ImageTracking/SingleImageTracking/SingleImageTracking.unity
     guid: fcc8bdde1f18fc1409af4c834043f32e
+  - enabled: 1
+    path: Assets/Scenes-Develpment/WebAR.unity
+    guid: af4081f67392b824b9572f74277067d5
   m_configObjects: {}
