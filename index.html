@@ -3,18 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>웹 카메라 피드</title>
+    <title>웹 카메라 선택</title>
 </head>
 <body>
-    <h1>웹 카메라 피드</h1>
+    <h1>웹 카메라 선택</h1>
+    
+    <!-- 카메라 선택 드롭다운 -->
+    <label for="cameraSelect">카메라 선택: </label>
+    <select id="cameraSelect"></select>
+    
+    <!-- 웹 카메라 피드 -->
     <video id="webcam" autoplay playsinline></video>
 
     <script>
         // 웹 카메라 피드를 가져와서 <video> 요소에 연결하는 함수
-        async function startWebcam() {
+        async function startWebcam(deviceId = null) {
             try {
+                // 비디오 옵션 설정 (deviceId가 있으면 특정 장치 사용)
+                const constraints = {
+                    video: deviceId ? { deviceId: { exact: deviceId } } : true
+                };
+
                 // 웹 카메라 스트림을 가져옴
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
 
                 // <video> 요소에 스트림을 설정
                 const videoElement = document.getElementById('webcam');
@@ -24,8 +35,39 @@
             }
         }
 
-        // 페이지 로드 시 웹 카메라 시작
-        window.addEventListener('load', startWebcam);
+        // 사용 가능한 카메라 장치 목록을 드롭다운에 채우는 함수
+        async function getCameras() {
+            try {
+                // 사용 가능한 미디어 장치 목록 가져오기
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const videoDevices = devices.filter(device => device.kind === 'videoinput');
+
+                const cameraSelect = document.getElementById('cameraSelect');
+                cameraSelect.innerHTML = ''; // 드롭다운 초기화
+
+                videoDevices.forEach(device => {
+                    const option = document.createElement('option');
+                    option.value = device.deviceId;
+                    option.text = device.label || `카메라 ${cameraSelect.length + 1}`;
+                    cameraSelect.appendChild(option);
+                });
+
+                // 첫 번째 카메라 선택 및 웹 카메라 시작
+                if (videoDevices.length > 0) {
+                    startWebcam(videoDevices[0].deviceId);
+                }
+            } catch (error) {
+                console.error("카메라 장치 목록을 가져올 수 없습니다: ", error);
+            }
+        }
+
+        // 드롭다운에서 선택된 카메라로 변경 시 웹 카메라 스트림을 업데이트
+        document.getElementById('cameraSelect').addEventListener('change', (event) => {
+            startWebcam(event.target.value);
+        });
+
+        // 페이지 로드 시 사용 가능한 카메라 목록을 가져옴
+        window.addEventListener('load', getCameras);
     </script>
 </body>
 </html>
