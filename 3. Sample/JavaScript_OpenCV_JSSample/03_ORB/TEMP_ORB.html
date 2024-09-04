@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ORB Feature Extraction with OpenCV.js and Webcam</title>
+    <script async src="https://docs.opencv.org/4.x/opencv.js" onload="onOpenCvReady();"></script>
+</head>
+<body>
+    <h2>OpenCV.js ORB Feature Extraction with Webcam</h2>
+    <video id="videoInput" width="640" height="480" autoplay></video>
+    <canvas id="canvasOutput" width="640" height="480"></canvas>
+
+    <script type="text/javascript">
+        let video = document.getElementById('videoInput');
+        let streaming = false;
+        let detector = null;
+
+        function onOpenCvReady() {
+            console.log('OpenCV.js is ready.');
+            startWebcam();
+        }
+
+        function startWebcam() {
+            navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+                .then((stream) => {
+                    video.srcObject = stream;
+                    video.play();
+                    streaming = true;
+                    //detector = new cv.ORB({ nfeatures: 1000 });  // ORB 키포인트 탐지기 초기화
+                    requestAnimationFrame(processVideo);
+                })
+                .catch((err) => {
+                    console.error("Error accessing webcam: " + err);
+                });
+        }
+
+        function processVideo() {
+            if (!streaming) {
+                requestAnimationFrame(processVideo);
+                return;
+            }
+
+            let src = new cv.Mat(video.height, video.width, cv.CV_8UC4);
+            let ctx = document.createElement('canvas').getContext('2d');
+            ctx.drawImage(video, 0, 0, video.width, video.height);
+            let imageData = ctx.getImageData(0, 0, video.width, video.height);
+            src.data.set(imageData.data);
+
+            //// 비디오 프레임에서 키포인트를 감지
+            //let keypoints = new cv.KeyPointVector();
+            //let descriptors = new cv.Mat();
+            //detector.detectAndCompute(src, new cv.Mat(), keypoints, descriptors);
+            
+            //// 감지된 키포인트를 화면에 원으로 표시
+            //for (let i = 0; i < keypoints.size(); i++) {
+            //    let kp = keypoints.get(i);
+            //    cv.circle(src, new cv.Point(kp.pt.x, kp.pt.y), 4, new cv.Scalar(0, 255, 0, 255), -1);
+            //}
+
+            // 결과를 캔버스에 표시
+            cv.imshow('canvasOutput', src);
+
+            // 메모리 해제
+            src.delete();
+            //keypoints.delete();
+            //descriptors.delete();
+
+            requestAnimationFrame(processVideo);
+        }
+    </script>
+</body>
+</html>

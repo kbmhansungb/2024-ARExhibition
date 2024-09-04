@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Template Matching with OpenCV.js and Webcam</title>
+    <script async src="https://docs.opencv.org/4.x/opencv.js" onload="onOpenCvReady();"></script>
+</head>
+<body>
+    <h2>OpenCV.js Template Matching with Webcam</h2>
+    <input type="file" id="templateImageUpload" accept="image/*" />
+    <video id="videoInput" width="640" height="480" autoplay></video>
+    <canvas id="canvasOutput"></canvas>
+
+    <script type="text/javascript">
+        let video = document.getElementById('videoInput');
+        let templateMat = null;
+        let streaming = false;
+
+        function onOpenCvReady() {
+            console.log('OpenCV.js is ready.');
+            startWebcam();
+        }
+
+        function startWebcam() {
+            navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+                .then((stream) => {
+                    video.srcObject = stream;
+                    video.play();
+                    streaming = true;
+                    requestAnimationFrame(processVideo);
+                })
+                .catch((err) => {
+                    console.error("Error accessing webcam: " + err);
+                });
+        }
+
+        document.getElementById('templateImageUpload').addEventListener('change', (event) => {
+            loadTemplateImage(event.target.files[0]);
+        });
+
+        function loadTemplateImage(file) {
+            let reader = new FileReader();
+            reader.onload = function (e) {
+                let img = new Image();
+                img.onload = function () {
+                    let canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    let ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, img.width, img.height);
+
+                    // 템플릿 이미지 업데이트
+                    if (templateMat) {
+                        templateMat.delete();
+                    }
+                    templateMat = cv.imread(canvas);
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function processVideo() {
+            if (!streaming) {
+                return;
+            }
+
+            let src = new cv.Mat(video.height, video.width, cv.CV_8UC4);
+            let cap = new cv.VideoCapture(video);
+
+            cap.read(src);
+
+            if (templateMat) {
+                let result = new cv.Mat();
+                let mask = new cv.Mat();
+
+                // 템플릿 매칭 수행
+                cv.matchTemplate(src, templateMat, result, cv.TM_CCOEFF_NORMED, mask);
+
+                // 매칭된 위치를 찾음
+                let minMax = cv.minMaxLoc(result, mask);
+                let maxPoint = minMax.maxLoc;
+
+                // 매칭된 위치에 사각형 그리기
+                let color = new cv.Scalar(0, 255, 0, 255);
+                let point = new cv.Point(maxPoint.x + templateMat.cols, maxPoint.y + templateMat.rows);
+                cv.rectangle(src, maxPoint, point, color, 2, cv.LINE_8, 0);
+
+                // 메모리 해제
+                result.delete();
+                mask.delete();
+            }
+
+            // 결과 표시
+            cv.imshow('canvasOutput', src);
+
+            // 메모리 해제
+            src.delete();
+
+            requestAnimationFrame(processVideo);
+        }
+    </script>
+</body>
+</html>

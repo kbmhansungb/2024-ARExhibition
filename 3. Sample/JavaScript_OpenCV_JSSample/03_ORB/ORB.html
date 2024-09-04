@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ORB Feature Extraction with OpenCV.js and Webcam</title>
+    <script async src="https://docs.opencv.org/4.x/opencv.js" onload="onOpenCvReady();"></script>
+    <style>
+        /* videoInput 요소에 대한 스타일 정의 */
+        #videoInput {
+            border: 1px solid black;
+            width: 640px;
+            height: 480px;
+        }
+        #canvasOutput {
+            border: 1px solid black;
+            width: 640px;
+            height: 480px;
+        }
+    </style>
+</head>
+<body>
+    <h2>OpenCV.js ORB Feature Extraction with Webcam</h2>
+    <video id="videoInput" autoplay></video>
+    <canvas id="canvasOutput"></canvas>
+
+    <script type="text/javascript">
+        let video = document.getElementById('videoInput');
+        let canvas = document.getElementById("canvasOutput");
+        let streaming = false;
+
+        function onOpenCvReady() {
+            console.log('OpenCV.js is ready.');
+            startWebcam();
+        }
+
+        function startWebcam() {
+            navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+                .then((stream) => {
+                    video.srcObject = stream;
+                    video.play();
+                    streaming = true;
+                    requestAnimationFrame(processVideo);
+                })
+                .catch((err) => {
+                    console.error("Error accessing webcam: " + err);
+                });
+        }
+
+        function processVideo() {
+            if (!streaming) {
+                requestAnimationFrame(processVideo);
+                return;
+            }
+            //console.log("process video");
+
+            let videoWidth = video.videoWidth;
+            let videoHeight = video.videoHeight;
+
+            let canvasWidth = canvas.width;
+            let canvasHeight = canvas.height;
+
+            // FIXME: canvas의 width와 height가 다른 값으로 설정되어 있으면 이미지가 제대로 렌더되지 않음
+            //console.log("videoWidth: " + videoWidth + ", videoHeight: " + videoHeight + ", canvasWidth : " + canvasWidth + ", canvasHeight: " + canvasHeight);
+            videoWidth = canvasWidth;
+            videoHeight = canvasHeight;
+
+            if (videoWidth > 0 || videoHeight > 0)
+            {
+                let src = new cv.Mat(videoHeight, videoWidth, cv.CV_8UC4);
+                let ctx = document.createElement('canvas').getContext('2d');
+                ctx.drawImage(video, 0, 0, videoWidth, videoHeight);
+                let imageData = ctx.getImageData(0, 0, videoWidth, videoHeight);
+                src.data.set(imageData.data);
+
+                {
+                    // let 
+                }
+
+                // 결과를 캔버스에 표시
+                cv.imshow('canvasOutput', src);
+                
+                // 메모리 해제
+                src.delete();
+            }
+            
+            requestAnimationFrame(processVideo);
+        }
+    </script>
+</body>
+</html>

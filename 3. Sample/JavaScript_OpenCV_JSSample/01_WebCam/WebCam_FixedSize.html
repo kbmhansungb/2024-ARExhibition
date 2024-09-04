@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebCam FixedSize</title>
+    <script async src="https://docs.opencv.org/4.x/opencv.js" onload="onOpenCvReady();"></script>
+    <style>
+        /* videoInput 요소에 대한 스타일 정의 */
+        #videoInput {
+            width: 640px;
+            height: 480px;
+            border: 1px solid black;
+        }
+    </style>
+</head>
+<body>
+    <h2>WebCam FixedSize</h2>
+    <video id="videoInput" autoplay></video>
+
+    <script type="text/javascript">
+        let video = document.getElementById('videoInput');
+        let streaming = false;
+
+        function onOpenCvReady() {
+            console.log('OpenCV.js is ready.');
+            startWebcam();
+        }
+
+        function startWebcam() {
+            navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+                .then((stream) => {
+                    video.srcObject = stream;
+                    video.play();
+                    streaming = true;
+                    requestAnimationFrame(processVideo);
+                })
+                .catch((err) => {
+                    console.error("Error accessing webcam: " + err);
+                });
+        }
+
+        function processVideo() {
+            if (!streaming) {
+                return;
+            }
+        }
+    </script>
+</body>
+</html>
