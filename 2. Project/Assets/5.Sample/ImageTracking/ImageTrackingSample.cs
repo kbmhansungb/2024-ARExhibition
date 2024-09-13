@@ -258,11 +258,28 @@ namespace ImageTracking.Sample
 
                     // unity 좌표계로 변환
                     localPosition = new Vector3(localPosition.x, -localPosition.y, localPosition.z);
+                    points.Add(localPosition);
+                }
 
-                    // 카메라를 기준으로 world 좌표로 변환
-                    Vector3 worldPOsition = mainCamera.transform.TransformPoint(localPosition);
+                // 각 변의 길이를 구함
+                float width1 = Vector3.Distance(points[0], points[1]);  
+                float width2 = Vector3.Distance(points[2], points[3]);      
+                float height1 = Vector3.Distance(points[0], points[3]); 
+                float height2 = Vector3.Distance(points[1], points[2]);
 
-                    points.Add(worldPOsition);
+                // 이미지의 실제 크기와 비율의 평균을 구함
+                  float toRealRatio = (((float)trackingTarget.RealImageSize.width / width1) + ((float)trackingTarget.RealImageSize.width / width2) + ((float)trackingTarget.RealImageSize.height / height1) + ((float)trackingTarget.RealImageSize.height / height2)) / 4;
+                // 실제 크기를 가지도록 스케일을 조정  
+                for (int i = 0; i < points.Count; i++)
+                {
+                    points[i] = points[i] * toRealRatio;
+                }
+
+                // 카메라를 기준으로 world 좌표로 변환
+                for (int i = 0; i < points.Count; i++)
+                {
+                    Vector3 worldPOsition = mainCamera.transform.TransformPoint(points[i]);
+                    points[i] = worldPOsition;  
                 }
 
                 debugText.text += $"\nPoints: {string.Join(", ", points)}";
