@@ -3,86 +3,86 @@ using OpenCVForUnity.CoreModule;
 using OpenCVForUnity.Features2dModule;
 using OpenCVForUnity.ImgprocModule;
 using OpenCVForUnity.UnityUtils;
-using OpenCVForUnity.VideoioModule;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace ImageTracking.Sample
 {
+    /// <summary>
+    /// <para>트래킹 대상 데이터 입니다.</para>
+    /// <para>* <see cref="TrackingTargetData"/>참고</para>
+    /// </summary>
     [Serializable]
-    public class TrackingTarget
+    public class TrackingTargetData
     {
-        public Texture2D texture;
-        public Mat imageMat;
-        public MatOfKeyPoint keyPoints;
-        public Mat descriptors;
+        public Texture2D Texture;
+        public Size RealImageSize;
+
+        [NonSerialized] public Mat ImageMat;
+        [NonSerialized] public MatOfKeyPoint KeyPoints;
+        [NonSerialized] public Mat Descriptors;
+
+        public List<Vector3> localPositions = new List<Vector3>();
+        public List<Vector3> eulerRotations = new List<Vector3>();
+
+        public void Initialize()
+        {
+            KeyPoints = new MatOfKeyPoint();
+            Descriptors = new Mat();
+            ImageMat = new Mat(Texture.height, Texture.width, CvType.CV_8UC4);
+            Utils.texture2DToMat(Texture, ImageMat);
+
+            // RGB -> GRAY로 변환
+            Imgproc.cvtColor(ImageMat, ImageMat, Imgproc.COLOR_RGBA2GRAY);
+
+            // 특징점 검출하고 계산
+            ORB orb = ORB.create();
+            orb.detectAndCompute(ImageMat, new Mat(), KeyPoints, Descriptors);
+        }
     }
 
     public class ImageTrackingSample : MonoBehaviour
     {
-        [Header("ImageTrackingSample/WebCamTexture")]
-        private WebCamTexture webCamTexture;
+        [Header("ImageTrackingSample/Tracking targets")]
+        [SerializeField] private TrackingTargetData trackingTarget;
+
+        List<Vector3> points;
 
         [Header("ImageTrackingSample/Reference")]
+        [SerializeField] private Camera mainCamera;
         [SerializeField] private RawImage rawImage;
+        [SerializeField] private Transform targetTransform;
+        
+        public float focalLength = 100;
 
-        [Header("ImageTrackingSample/Tracking targets")]
-        [SerializeField] private List<Texture2D> imageReferences;
-        private List<TrackingTarget> trackingTargets = new List<TrackingTarget>();
-
-        //[SerializeField] private Size reducedSize = new Size(320, 240);
-        private Size sourceSize;
-        private Size resizeScale;
-
-        //private VideoCapture videoCapture;
+        [Header("ImageTrackingSample/WebCamTexture")]
+        [SerializeField] private Size FrameSize = new Size(1280, 720);
+        private WebCamTexture webCamTexture; // VideoCapture의 경우 Web에서 카메라 접속이 안되어 WebCamTexture로 대체
         private ORB orb;
         private DescriptorMatcher matcher;
 
+        [Header("ImageTrackingSample/Debug")]
+        [SerializeField] private TextMeshProUGUI debugText;
+
+
         private void Start()
         {
-            //// 비디오 캡쳐 객체 생성
-            //videoCapture = new VideoCapture(0);
-
-            // ORB 검출기를 초기화합니다.
-            orb = ORB.create();
-
-            // FLANN 기반 매처를 초기화합니다.
-            matcher = DescriptorMatcher.create(DescriptorMatcher.BRUTEFORCE_HAMMINGLUT);
+            // ORB 검출기와 Matcher를 초기화합니다.
+            {
+                orb = ORB.create();
+                matcher = DescriptorMatcher.create(DescriptorMatcher.BRUTEFORCE_HAMMINGLUT);
+            }
 
             // 트래킹 대상 이미지를 초기화합니다.
-            foreach (var texture in imageReferences)
-            {
-                MatOfKeyPoint keyPoints = new MatOfKeyPoint();
-                Mat descriptors = new Mat();
-                Mat imageMat = new Mat(texture.height, texture.width, CvType.CV_8UC4);
-                Utils.texture2DToMat(texture, imageMat);
-
-                // RGB -> GRAY로 변환
-                Imgproc.cvtColor(imageMat, imageMat, Imgproc.COLOR_RGBA2GRAY);
-
-                // 최적화를 위해 이미지 크기를 줄임
-                Size imageSize = new Size(imageMat.cols(), imageMat.rows());
-                //double matchScale = Math.Min(reducedSize.width / imageSize.width, reducedSize.height / imageSize.height);
-                //Imgproc.resize(imageMat, imageMat, reducedSize * matchScale);
-
-                orb.detectAndCompute(imageMat, new Mat(), keyPoints, descriptors);
-
-                trackingTargets.Add(new TrackingTarget
-                {
-                    texture = texture,
-                    imageMat = imageMat,
-                    keyPoints = keyPoints,
-                    descriptors = descriptors
-                });
-            }
+            trackingTarget.Initialize();
 
             Utils.setDebugMode(true);
 
-
-            // Check if the user has authorized the use of the webcam
+            // 사용자가 웹캠 사용을 허가했는지 확인
             if (Application.HasUserAuthorization(UserAuthorization.WebCam))
             {
                 StartCamera();
@@ -112,7 +112,10 @@ namespace ImageTracking.Sample
             if (devices.Length > 0)
             {
                 webCamTexture = new WebCamTexture(devices[0].name);
-                //rawImage.texture = webCamTexture;
+                //// 500x500으로 크기 조정 // 동작 안함
+                webCamTexture.requestedWidth = (int)FrameSize.width;
+                webCamTexture.requestedHeight = (int)FrameSize.height;
+
                 webCamTexture.Play();
             }
             else
@@ -123,183 +126,210 @@ namespace ImageTracking.Sample
 
         private void Update()
         {
-            //// 이미지 특성 추출 테스트
-            //{
-            //    var trackingTarget = trackingTargets[0];
-            //
-            //    // 특징점 그림
-            //    Mat resultMat = trackingTarget.imageMat.clone();
-            //    Features2d.drawKeypoints(trackingTarget.imageMat, trackingTarget.keyPoints, resultMat);
-            //    UpdateITexture(resultMat);
-            //
-            //    return;
-            //}
-
-            // 비디오 프레임을 받아옴
-            Mat frame = null;
-            if (webCamTexture.didUpdateThisFrame)
-            {
-                frame = new Mat(webCamTexture.height, webCamTexture.width, CvType.CV_8UC4);
-                Utils.webCamTextureToMat(webCamTexture, frame);
-            }
-            else
+            // 웹캠이 정지되어 있으면 리턴
+            if (webCamTexture == null || !webCamTexture.isPlaying)
             {
                 return;
             }
-            sourceSize = new Size(frame.cols(), frame.rows());
 
-            ////
-            // 특징점 검출
+            // 프레임이 업데이트 되지 않았으면 리턴
+            if (webCamTexture.didUpdateThisFrame)
+            {
+                return;
+            }
 
-            //// BRG -> RGB로 변환
-            //Imgproc.cvtColor(frame, frame, Imgproc.COLOR_BGR2RGB);
+            debugText.text = "";
+
+            // 비디오 프레임을 받아옴
+            Mat frame = new Mat(webCamTexture.height, webCamTexture.width, CvType.CV_8UC4);
+            Utils.webCamTextureToMat(webCamTexture, frame);
 
             // grayscale 이미지 생성
             Mat grayFrame = new Mat();
             Imgproc.cvtColor(frame, grayFrame, Imgproc.COLOR_RGB2GRAY);
-
-            // 최적화를 위해 이미지 크기를 줄임
-            //Imgproc.resize(grayFrame, grayFrame, reducedSize);
-            //resizeScale = new Size(sourceSize.width / reducedSize.width, sourceSize.height / reducedSize.height);
 
             // 특징점 검출하고 계산
             MatOfKeyPoint keyPoints = new MatOfKeyPoint();
             Mat descriptors = new Mat();
             orb.detectAndCompute(grayFrame, new Mat(), keyPoints, descriptors);
 
-            //// 
-            // 가장 잘 매칭되는 이미지 찾습니다.
-            int bestMatchIndex = -1;
-            int maxGoodMatchCount = 0;
-            Mat bestHomography = null;
-            for (int i = 0; i < trackingTargets.Count; i++)
+            // 매칭
+            MatOfDMatch matches = new MatOfDMatch();
+            matcher.match(trackingTarget.Descriptors, descriptors, matches);
+
+            // 매칭 결과를 거리로 정렬
+            List<DMatch> matchesList = matches.toList();
+            List<DMatch> goodMatches = new List<DMatch>();
+            for (int j = 0; j < matchesList.Count; j++)
             {
-                var trackingTarget = trackingTargets[i];
-
-                MatOfDMatch matches = new MatOfDMatch();
-                matcher.match(trackingTarget.descriptors, descriptors, matches);
-
-                // 좋은 매칭점 찾기
-                List<DMatch> matchesList = matches.toList();
-                List<DMatch> goodMatches = new List<DMatch>();
-                for (int j = 0; j < matchesList.Count; j++)
+                var match = matchesList[j];
+                if (match.distance < 50)
                 {
-                    if (matchesList[j].distance < 50)
-                    {
-                        goodMatches.Add(matchesList[j]);
-                    }
-                }
-
-                if (maxGoodMatchCount < goodMatches.Count)
-                {
-                    maxGoodMatchCount = goodMatches.Count;
-                    bestMatchIndex = i;
-
-                    // 호모그래피를 찾기 위해서는 최소 4개의 매칭점이 필요합니다.
-                    if (goodMatches.Count > 4)
-                    {
-                        // 매칭점을 이용하여 호모그래피를 찾습니다.
-                        List<Point> srcPoints = new List<Point>();
-                        List<Point> dstPoints = new List<Point>();
-                        foreach (var match in goodMatches)
-                        {
-                            srcPoints.Add(trackingTarget.keyPoints.toArray()[match.queryIdx].pt);
-                            dstPoints.Add(keyPoints.toArray()[match.trainIdx].pt);
-                        }
-
-                        MatOfPoint2f srcPointsMat = new MatOfPoint2f();
-                        srcPointsMat.fromList(srcPoints);
-                        MatOfPoint2f dstPointsMat = new MatOfPoint2f();
-                        dstPointsMat.fromList(dstPoints);
-
-                        bestHomography = Calib3d.findHomography(srcPointsMat, dstPointsMat, Calib3d.RANSAC, 5);
-                    }
+                    goodMatches.Add(match);
                 }
             }
 
-            Vector3 eulerRotation = new Vector3(0, 0, 0);
-            Vector3 position = new Vector3(0, 0, 0);
-            if (bestMatchIndex != -1 && bestHomography != null)
+            if (goodMatches.Count < 4)
             {
-                // 가장 유사한 이미지의 코너를 현재 프레임에 투영하여 그립니다
-                var trackingTarget = trackingTargets[bestMatchIndex];
-                int h = trackingTarget.imageMat.rows();
-                int w = trackingTarget.imageMat.cols();
-                List<Point> pts = new List<Point>
+                UpdateITexture(frame);
+                return;
+            }
+
+            // homography 계산
+            List<Point> srcPoints = new List<Point>();
+            List<Point> dstPoints = new List<Point>();
+            foreach (var match in goodMatches)
             {
-                new Point(0, 0),
-                new Point(0, h - 1),
-                new Point(w - 1, h - 1),
-                new Point(w - 1, 0)
-            };
-                MatOfPoint2f ptsMat = new MatOfPoint2f();
-                ptsMat.fromList(pts);
-                MatOfPoint2f dst = new MatOfPoint2f();
-                Core.perspectiveTransform(ptsMat, dst, bestHomography);
+                srcPoints.Add(trackingTarget.KeyPoints.toArray()[match.queryIdx].pt);
+                dstPoints.Add(keyPoints.toArray()[match.trainIdx].pt);
+            }
 
-                // 현재 프레임에 사각형을 그립니다
-                Imgproc.polylines(frame, new List<MatOfPoint> { new MatOfPoint(dst.toArray()) }, true, new Scalar(0, 255, 0), 3, Imgproc.LINE_AA);
-                Debug.Log("bestMatchIndex: " + bestMatchIndex);
+            MatOfPoint2f srcPointsMat = new MatOfPoint2f();
+            srcPointsMat.fromList(srcPoints);
+            MatOfPoint2f dstPointsMat = new MatOfPoint2f();
+            dstPointsMat.fromList(dstPoints);
 
-                // 카메라 행렬
-                float focalLength = 1.0f;
-                Vector2 center = new Vector2(frame.cols() / 2, frame.rows() / 2);
+            Mat homography = Calib3d.findHomography(srcPointsMat, dstPointsMat, Calib3d.RANSAC, 5);
 
-                var cameraMatrix = new Mat(3, 3, CvType.CV_64FC1);
+            if (!homography.empty())
+            {
+                // 트래킹 대상의 위치와 회전을 계산
+                MatOfPoint2f trackingTargetCorners
+                    = new MatOfPoint2f(
+                        new Point(0, 0),
+                        new Point(trackingTarget.Texture.width, 0),
+                        new Point(trackingTarget.Texture.width, trackingTarget.Texture.height),
+                        new Point(0, trackingTarget.Texture.height),
+
+
+                        new Point(trackingTarget.Texture.width / 2, trackingTarget.Texture.height / 2), // center
+                        new Point(trackingTarget.Texture.width / 2 + 100, trackingTarget.Texture.height / 2), 
+                        new Point(trackingTarget.Texture.width / 2, trackingTarget.Texture.height / 2 - 100)
+                        );
+
+                debugText.text = $"Homography: {homography.dump()}";
+                debugText.text += $"\nTrackingTargetCorners: {trackingTargetCorners.dump()}";
+
+                MatOfPoint2f trackingTargetCornersTransformed = new MatOfPoint2f();
+                Core.perspectiveTransform(trackingTargetCorners, trackingTargetCornersTransformed, homography);
+
+                var results = trackingTargetCornersTransformed.toList();
+
+                // 이미지 경계선을 그림
+                Imgproc.line(frame, results[0], results[1], new Scalar(255, 0, 0), 2);
+                Imgproc.line(frame, results[1], results[2], new Scalar(255, 0, 0), 2);
+                Imgproc.line(frame, results[2], results[3], new Scalar(255, 0, 0), 2);
+                Imgproc.line(frame, results[3], results[0], new Scalar(255, 0, 0), 2);
+
+                // 대각을 그림
+                Imgproc.line(frame, results[0], results[2], new Scalar(255, 0, 0), 1);
+                Imgproc.line(frame, results[1], results[3], new Scalar(255, 0, 0), 1);
+
+
+                // 중심점을 그림
+                Imgproc.circle(frame, results[4], 5, new Scalar(0, 255, 0), 2);
+
+                // draw vector
+                Imgproc.line(frame, results[4], results[5], new Scalar(0, 255, 0), 2);
+                Imgproc.line(frame, results[4], results[6], new Scalar(0, 255, 0), 2);
+
+                debugText.text += $"\nTrackingTargetCornersTransformed: {trackingTargetCornersTransformed.dump()}";
+
+                // 기본 카메라 메트릭스 정의
+                //float focalLength = 100;
+                Mat cameraMatrix = new Mat(3, 3, CvType.CV_64FC1);
                 cameraMatrix.put(0, 0, focalLength);
-                cameraMatrix.put(0, 2, center.x);
                 cameraMatrix.put(1, 1, focalLength);
-                cameraMatrix.put(1, 2, center.y);
-                cameraMatrix.put(2, 2, 1.0);
+                cameraMatrix.put(0, 2, frame.width() / 2);
+                cameraMatrix.put(1, 2, frame.height() / 2);
+                cameraMatrix.put(2, 2, 1);
 
-                // 객체의 3D 자표 정의
-                MatOfPoint3f objPoints = new MatOfPoint3f();
-                objPoints.fromArray(new Point3(0, 0, 0), new Point3(0, h - 1, 0), new Point3(w - 1, h - 1, 0), new Point3(w - 1, 0, 0));
+                // 카메라 메트릭스를 이용하여 homography를 변환
+                Mat H1 = cameraMatrix.inv() * homography;
 
-                // 카메라 행렬을 이용하여 카메라 위치와 회전을 찾습니다.
-                Mat rvec = new Mat();
-                Mat tvec = new Mat();
-                Calib3d.solvePnP(objPoints, dst, cameraMatrix, new MatOfDouble(), rvec, tvec);
+                debugText.text += $"\nHomography: {H1.dump()}";
 
-                position = new Vector3((float)tvec.get(0, 0)[0], (float)tvec.get(1, 0)[0], (float)tvec.get(2, 0)[0]);
-                eulerRotation = new Vector3((float)rvec.get(0, 0)[0], (float)rvec.get(1, 0)[0], (float)rvec.get(2, 0)[0]);
+                // 코너 포인트를 정의하고 H1을 이용하여 변환
+                this.points = new List<Vector3>();
+                foreach (var point in trackingTargetCorners.toList())
+                {
+                    Mat resultPoints = H1 * new MatOfDouble(point.x, point.y, 1);
+                    Vector3 localPosition = new Vector3((float)resultPoints.get(0, 0)[0], (float)resultPoints.get(1, 0)[0], (float)resultPoints.get(2, 0)[0]);
 
-                Debug.Log("position: " + position + " eulerRotation: " + eulerRotation);
+                    // unity 좌표계로 변환
+                    localPosition = new Vector3(localPosition.x, -localPosition.y, localPosition.z);
+
+                    // 카메라를 기준으로 world 좌표로 변환
+                    Vector3 worldPOsition = mainCamera.transform.TransformPoint(localPosition);
+
+                    points.Add(worldPOsition);
+                }
+
+                debugText.text += $"\nPoints: {string.Join(", ", points)}";
             }
 
+            UpdateITexture(frame);
+        }
 
-            //////
-            //// 특징점 그림
+        private void OnDrawGizmos()
+        {
+            if (points == null)
+            {
+                return;
+            }
+
+            //Gizmos.color = Color.red;
+            //for (int i = 0; i < points.Count; i++)
             //{
-            //    // 특징점을 원래 이미지에 그리기 위해 크기를 원래 크기로 복원
-            //    {
-            //        var pointArray = keyPoints.toArray();
-            //        for (int i = 0; i < pointArray.Length; i++)
-            //        {
-            //            pointArray[i].pt = new Point(pointArray[i].pt.x * resizeScale.width, pointArray[i].pt.y * resizeScale.height);
-            //        }
-            //        keyPoints.fromArray(pointArray);
-            //    }
-
-            //    // 특징점을 그림
-            //    Features2d.drawKeypoints(frame, keyPoints, frame);
+            //    Gizmos.DrawSphere(points[i], 0.1f);
             //}
 
-            // RawImage에 텍스쳐 적용
-            UpdateITexture(frame);
+            // 사각형 그리기
+            Gizmos.color = Color.green;
+            Gizmos.DrawLine(points[0], points[1]);
+            Gizmos.DrawLine(points[1], points[2]);
+            Gizmos.DrawLine(points[2], points[3]);
+            Gizmos.DrawLine(points[3], points[0]);
+
+            // 대각선 그리기
+            Gizmos.DrawLine(points[0], points[2]);
+            Gizmos.DrawLine(points[1], points[3]);
+
+            // 중심점 그리기
+            Gizmos.color = Color.blue;
+            Gizmos.DrawSphere(points[4], 0.1f);
+
+            // 벡터 그리기
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawLine(points[4], points[5]);
+            Gizmos.DrawLine(points[4], points[6]);
+
+            // 카메라로부터 사각형의 경계선을 지나는 선 그리기
+            Vector3 cameraPosition = mainCamera.transform.position;
+
+            Vector3 p0Vec = (points[0] - cameraPosition).normalized;
+            Vector3 p1Vec = (points[1] - cameraPosition).normalized;
+            Vector3 p2Vec = (points[2] - cameraPosition).normalized;
+            Vector3 p3Vec = (points[3] - cameraPosition).normalized;
+
+            float length = 1000;
+            Gizmos.color = Color.red;
+            Gizmos.DrawLine(cameraPosition, cameraPosition + p0Vec * length);
+            Gizmos.DrawLine(cameraPosition, cameraPosition + p1Vec * length);
+            Gizmos.DrawLine(cameraPosition, cameraPosition + p2Vec * length);
+            Gizmos.DrawLine(cameraPosition, cameraPosition + p3Vec * length);
         }
 
         private void OnDestroy()
         {
-            if (webCamTexture != null)
-            {
-                webCamTexture.Stop();
-            }
-
             if (rawImage.texture != null)
             {
                 Destroy(rawImage.texture);
-                rawImage.texture = null;
+            }
+
+            if (webCamTexture != null)
+            {
+                webCamTexture.Stop();
             }
         }
 
