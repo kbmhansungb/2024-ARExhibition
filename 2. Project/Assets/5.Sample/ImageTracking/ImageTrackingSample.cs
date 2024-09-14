@@ -283,6 +283,25 @@ namespace ImageTracking.Sample
                 }
 
                 debugText.text += $"\nPoints: {string.Join(", ", points)}";
+
+                // 중심점을 계산
+                Vector3 center = Vector3.zero;
+                for (int i = 0; i < 4; i++)
+                {
+                    center += points[i];
+                }
+                center /= 4;
+
+                // 회전을 계싼
+                Vector3 upVector = (points[6] - points[4]).normalized;
+                Vector3 rightVector = (points[5] - points[4]).normalized;
+                Vector3 forwardVector = Vector3.Cross(upVector, rightVector);
+
+                Quaternion rotation = Quaternion.LookRotation(forwardVector, upVector);
+
+                // 타겟의 위치와 회전을 업데이트
+                targetTransform.position = center;
+                targetTransform.rotation = rotation;
             }
 
             UpdateITexture(frame);
