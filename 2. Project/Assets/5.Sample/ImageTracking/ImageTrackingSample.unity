@@ -593,9 +593,9 @@ MonoBehaviour:
     localPositions: []
     eulerRotations: []
   mainCamera: {fileID: 1951065332}
+  canvas: {fileID: 1078536849}
   rawImage: {fileID: 1712939136}
   targetTransform: {fileID: 664604771}
-  focalLength: 623.5382
   FrameSize:
     width: 1280
     height: 720

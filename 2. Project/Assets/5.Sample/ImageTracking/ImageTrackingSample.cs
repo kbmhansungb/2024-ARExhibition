@@ -54,10 +54,9 @@ namespace ImageTracking.Sample
 
         [Header("ImageTrackingSample/Reference")]
         [SerializeField] private Camera mainCamera;
+        [SerializeField] private Canvas canvas;
         [SerializeField] private RawImage rawImage;
         [SerializeField] private Transform targetTransform;
-        
-        public float focalLength = 100;
 
         [Header("ImageTrackingSample/WebCamTexture")]
         [SerializeField] private Size FrameSize = new Size(1280, 720);
@@ -236,7 +235,8 @@ namespace ImageTracking.Sample
                 debugText.text += $"\nTrackingTargetCornersTransformed: {trackingTargetCornersTransformed.dump()}";
 
                 // 기본 카메라 메트릭스 정의
-                //float focalLength = 100;
+                float focalLength = 100 / canvas.transform.localScale.x;
+
                 Mat cameraMatrix = new Mat(3, 3, CvType.CV_64FC1);
                 cameraMatrix.put(0, 0, focalLength);
                 cameraMatrix.put(1, 1, focalLength);
@@ -297,11 +297,14 @@ namespace ImageTracking.Sample
                 Vector3 rightVector = (points[5] - points[4]).normalized;
                 Vector3 forwardVector = Vector3.Cross(upVector, rightVector);
 
-                Quaternion rotation = Quaternion.LookRotation(forwardVector, upVector);
+                Quaternion rotation = forwardVector != Vector3.zero ? Quaternion.LookRotation(forwardVector, upVector) : Quaternion.identity;
 
-                // 타겟의 위치와 회전을 업데이트
-                targetTransform.position = center;
-                targetTransform.rotation = rotation;
+                if (center != Vector3.zero && !float.IsNaN(center.x) && !float.IsNaN(center.y) && !float.IsNaN(center.z) && rotation != Quaternion.identity)
+                {
+                    // 타겟의 위치와 회전을 업데이트
+                    targetTransform.position = center;
+                    targetTransform.rotation = rotation;
+                }
             }
 
             UpdateITexture(frame);
@@ -309,16 +312,10 @@ namespace ImageTracking.Sample
 
         private void OnDrawGizmos()
         {
-            if (points == null)
+            if (points == null || points.Count == 0)
             {
                 return;
             }
-
-            //Gizmos.color = Color.red;
-            //for (int i = 0; i < points.Count; i++)
-            //{
-            //    Gizmos.DrawSphere(points[i], 0.1f);
-            //}
 
             // 사각형 그리기
             Gizmos.color = Color.green;
