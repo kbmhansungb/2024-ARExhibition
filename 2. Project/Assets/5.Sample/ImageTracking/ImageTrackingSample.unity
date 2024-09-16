@@ -223,7 +223,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 2.47, y: 3.58, z: 0.1}
+  m_LocalScale: {x: 1, y: 1, z: 0.1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1951065333}
@@ -586,10 +586,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   trackingTarget:
-    Texture: {fileID: 2800000, guid: acbb449edc9d25d479daba46e41caa5d, type: 3}
+    Texture: {fileID: 2800000, guid: cc07d3b9ac3b4c243ba1354c078d5e1c, type: 3}
     RealImageSize:
-      width: 2.47
-      height: 3.58
+      width: 1
+      height: 1
     localPositions: []
     eulerRotations: []
   mainCamera: {fileID: 1951065332}

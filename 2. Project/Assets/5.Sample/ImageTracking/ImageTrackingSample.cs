@@ -14,7 +14,6 @@ namespace ImageTracking.Sample
 {
     /// <summary>
     /// <para>트래킹 대상 데이터 입니다.</para>
-    /// <para>* <see cref="TrackingTargetData"/>참고</para>
     /// </summary>
     [Serializable]
     public class TrackingTargetData
@@ -25,9 +24,6 @@ namespace ImageTracking.Sample
         [NonSerialized] public Mat ImageMat;
         [NonSerialized] public MatOfKeyPoint KeyPoints;
         [NonSerialized] public Mat Descriptors;
-
-        public List<Vector3> localPositions = new List<Vector3>();
-        public List<Vector3> eulerRotations = new List<Vector3>();
 
         public void Initialize()
         {
