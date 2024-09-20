@@ -1074,7 +1074,7 @@ PrefabInstance:
     - target: {fileID: 3994092554901110402, guid: d09132251ba58134ca7a82d534ec612a,
         type: 3}
       propertyPath: m_ScaleFactor
-      value: 2
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5617435749170556504, guid: d09132251ba58134ca7a82d534ec612a,
         type: 3}
