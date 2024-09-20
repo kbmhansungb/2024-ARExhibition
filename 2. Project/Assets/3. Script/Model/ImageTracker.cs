@@ -21,8 +21,12 @@ namespace ImageTracking.Model
         public List<DMatch> MatchList;
         public List<DMatch> GoodMatchList;
 
-        public Vector3 EulerRotation;
+        //public Vector3 EulerRotation;
         public Vector3 Translation;
+
+        // 오일러 각도의 경우 보간시 문제가 발생할 수 있음 평균을 구하기 위해서 벡터값을 반환함
+        public Vector3 Foward;
+        public Vector3 Up;
 
         public int TotalMatches => MatchList.Count;
         public int GoodMatches => GoodMatchList.Count;
@@ -187,8 +191,17 @@ namespace ImageTracking.Model
             Quaternion rotation = Quaternion.LookRotation(forward, up);
             Vector3 eurlerRotation = rotation.eulerAngles;
 
-            trackingResult.EulerRotation = eurlerRotation;
+            // 위치나 회전이 유효하면 않으면 종료
+            if (float.IsNaN(centerPoint.x) || float.IsNaN(centerPoint.y) || float.IsNaN(centerPoint.z) ||
+                               float.IsNaN(eurlerRotation.x) || float.IsNaN(eurlerRotation.y) || float.IsNaN(eurlerRotation.z))
+            {
+                return trackingResult;
+            }
+
+            //trackingResult.EulerRotation = eurlerRotation;
             trackingResult.Translation = centerPoint;
+            trackingResult.Foward = forward;
+            trackingResult.Up = up;
 
             // 트래킹 성공
             trackingResult.IsTracking = true;

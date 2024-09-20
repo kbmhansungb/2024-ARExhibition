@@ -656,6 +656,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: SamplePresenter
       objectReference: {fileID: 0}
+    - target: {fileID: 3896759095640751641, guid: 671950c6cf745304bb86df74d89c1b47,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5696883400144468533, guid: 671950c6cf745304bb86df74d89c1b47,
         type: 3}
       propertyPath: m_Pivot.x

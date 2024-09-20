@@ -2,6 +2,7 @@ using ImageTracking.Model;
 using OpenCVForUnity.CoreModule;
 using OpenCVForUnity.UnityUtils;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -40,7 +41,19 @@ public class GameManager : Singleton<GameManager>
             yield return Application.RequestUserAuthorization(UserAuthorization.WebCam);
         }
 
-        webCamTexture = new WebCamTexture();
+        WebCamDevice[] devices = WebCamTexture.devices;
+        WebCamDevice selectDevice = devices[0];
+        // 후면 카메라를 찾습니다.
+        foreach (var device in devices)
+        {
+            if (!device.isFrontFacing)
+            {
+                selectDevice = device;
+                break;
+            }
+        }
+
+        webCamTexture = new WebCamTexture(selectDevice.name);
         rawImage.texture = webCamTexture;
 
         // 카메라 크기를 화면 크기에 맞게 조정합니다.
@@ -66,14 +79,92 @@ public class GameManager : Singleton<GameManager>
         var results = imageTracker.MatchFrame(frame, focalLength);
 
         var result = results[0];
-        // 매칭 결과와, 포지션, 로테이션을 콘솔에 출력합니다.
-        string resultString = $"MatchRatio: {result.MatchRatio}\n" +
-                              $"Translation: {result.Translation}\n" +
-                              $"EulerRotation: {result.EulerRotation}";
-        Debug.Log(resultString);
+        //// 매칭 결과와, 포지션, 로테이션을 콘솔에 출력합니다.
+        //string resultString = $"MatchRatio: {result.MatchRatio}\n" +
+        //                      $"Translation: {result.Translation}\n" +
+        //                      $"EulerRotation: {result.EulerRotation}";
+        //Debug.Log(resultString);
 
-        // 트래킹 오브젝트를 이동시킵니다.
-        trackingObject.localPosition = result.Translation;
-        trackingObject.localEulerAngles = result.EulerRotation;
+        if (result.IsTracking)
+        {
+            isTracking = true;
+            failCount = 0;
+
+            translations.Add(result.Translation);
+            //eulerRotations.Add(result.EulerRotation);
+            forwards.Add(result.Foward);
+            ups.Add(result.Up);
+
+            if (translations.Count > 3)
+            {
+                translations.RemoveAt(0);
+                //eulerRotations.RemoveAt(0);
+                forwards.RemoveAt(0);
+                ups.RemoveAt(0);
+            }
+        }
+        else
+        {
+            failCount++;
+            if (failCount > 3)
+            {
+                isTracking = false;
+                failCount = 0;
+
+                translations.Clear();
+                //eulerRotations.Clear();
+                forwards.Clear();
+                ups.Clear();
+            }
+        }
+
+        //// 트래킹 오브젝트를 이동시킵니다.
+        //trackingObject.localPosition = result.Translation;
+        //trackingObject.localEulerAngles = result.EulerRotation;
+
+        Vector3 averageTranslation = Vector3.zero;
+        //Vector3 averageEulerRotation = Vector3.zero;
+        Vector3 averageForward = Vector3.zero;
+        Vector3 averageUp = Vector3.zero;
+
+        if (translations.Count > 0)
+        {
+            foreach (var translation in translations)
+            {
+                averageTranslation += translation;
+            }
+            averageTranslation /= translations.Count;
+
+            //foreach (var eulerRotation in eulerRotations)
+            //{
+            //    averageEulerRotation += eulerRotation;
+            //}
+            //averageEulerRotation /= translations.Count;
+
+            foreach (var forward in forwards)
+            {
+                averageForward += forward;
+            }
+            averageForward /= translations.Count;
+
+            foreach (var up in ups)
+            {
+                averageUp += up;
+            }
+            averageUp /= translations.Count;
+        }
+
+        trackingObject.localPosition = averageTranslation;
+        //trackingObject.localEulerAngles = averageEulerRotation;
+        Vector3 eulerRotation = Quaternion.LookRotation(averageForward, averageUp).eulerAngles;
+        trackingObject.localEulerAngles = eulerRotation;
     }
+
+    bool isTracking = false;
+    List<Vector3> translations = new List<Vector3>();
+    //List<Vector3> eulerRotations = new List<Vector3>();
+    List<Vector3> forwards = new List<Vector3>();
+    List<Vector3> ups = new List<Vector3>();
+
+    int failCount = 0;
 }
