@@ -57,7 +57,8 @@ public class GameManager : Singleton<GameManager>
         rawImage.texture = webCamTexture;
 
         // 카메라 크기를 화면 크기에 맞게 조정합니다.
-        screenSize = new Vector2(Screen.width, Screen.height);
+        //screenSize = new Vector2(Screen.width, Screen.height);
+        screenSize = new Vector2(768, 1024);
         webCamTexture.requestedWidth = (int)screenSize.x;
         webCamTexture.requestedHeight = (int)screenSize.y;
         webCamTexture.Play();

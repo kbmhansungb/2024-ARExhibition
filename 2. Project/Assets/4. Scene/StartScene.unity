@@ -1071,10 +1071,60 @@ PrefabInstance:
       propertyPath: m_RenderMode
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 1837730195474254431, guid: d09132251ba58134ca7a82d534ec612a,
+        type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1837730195474254431, guid: d09132251ba58134ca7a82d534ec612a,
+        type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1837730195474254431, guid: d09132251ba58134ca7a82d534ec612a,
+        type: 3}
+      propertyPath: m_AnchorMin.x
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1837730195474254431, guid: d09132251ba58134ca7a82d534ec612a,
+        type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1837730195474254431, guid: d09132251ba58134ca7a82d534ec612a,
+        type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 1024
+      objectReference: {fileID: 0}
+    - target: {fileID: 1837730195474254431, guid: d09132251ba58134ca7a82d534ec612a,
+        type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 768
+      objectReference: {fileID: 0}
     - target: {fileID: 3994092554901110402, guid: d09132251ba58134ca7a82d534ec612a,
         type: 3}
       propertyPath: m_ScaleFactor
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3994092554901110402, guid: d09132251ba58134ca7a82d534ec612a,
+        type: 3}
+      propertyPath: m_UiScaleMode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3994092554901110402, guid: d09132251ba58134ca7a82d534ec612a,
+        type: 3}
+      propertyPath: m_ScreenMatchMode
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3994092554901110402, guid: d09132251ba58134ca7a82d534ec612a,
+        type: 3}
+      propertyPath: m_ReferenceResolution.x
+      value: 1024
+      objectReference: {fileID: 0}
+    - target: {fileID: 3994092554901110402, guid: d09132251ba58134ca7a82d534ec612a,
+        type: 3}
+      propertyPath: m_ReferenceResolution.y
+      value: 768
       objectReference: {fileID: 0}
     - target: {fileID: 5617435749170556504, guid: d09132251ba58134ca7a82d534ec612a,
         type: 3}
@@ -1130,6 +1180,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7074868506099475593, guid: d09132251ba58134ca7a82d534ec612a,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8092488543493867691, guid: d09132251ba58134ca7a82d534ec612a,
         type: 3}
