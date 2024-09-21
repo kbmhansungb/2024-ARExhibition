@@ -942,18 +942,18 @@ PrefabInstance:
     - target: {fileID: 2184828503767053742, guid: e93e1ebd8d5cb2049a184206dba440d0,
         type: 3}
       propertyPath: TrackingTargets.Array.data[0].RealImageSize.x
-      value: 5.34
+      value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 2184828503767053742, guid: e93e1ebd8d5cb2049a184206dba440d0,
         type: 3}
       propertyPath: TrackingTargets.Array.data[0].RealImageSize.y
-      value: 10.024
+      value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 2184828503767053742, guid: e93e1ebd8d5cb2049a184206dba440d0,
         type: 3}
       propertyPath: TrackingTargets.Array.data[0].ReferenceTexture
       value: 
-      objectReference: {fileID: 2800000, guid: 7277a023dd5f9f146a291d86343b980b, type: 3}
+      objectReference: {fileID: 2800000, guid: cc07d3b9ac3b4c243ba1354c078d5e1c, type: 3}
     - target: {fileID: 3338893631576461515, guid: e93e1ebd8d5cb2049a184206dba440d0,
         type: 3}
       propertyPath: canvas

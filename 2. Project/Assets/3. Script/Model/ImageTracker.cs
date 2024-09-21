@@ -224,7 +224,7 @@ namespace ImageTracking.Model
         {
             // ORB 초기화
             orb = ORB.create();
-            //orb.setMaxFeatures(64);
+            orb.setMaxFeatures(100);
 
             // Descriptor Matcher 초기화
             matcher = DescriptorMatcher.create(DescriptorMatcher.BRUTEFORCE_HAMMING);
@@ -235,7 +235,7 @@ namespace ImageTracking.Model
                 trackingTarget.Initialize(orb);
             }
 
-            //orb.setMaxFeatures(500);
+            orb.setMaxFeatures(500);
         }
 
         /// <summary>
